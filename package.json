@@ -2,7 +2,7 @@
   "name": "alter-office",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "dist/server.js",
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc",
