@@ -31,11 +31,16 @@ export const googleSignIn = async (req: Request, res: Response, next: NextFuncti
       process.env.JWT_SECRET!,
       { expiresIn: '1h' }
     );
-
+const userresponse={
+  _id:user._id,
+  name:user.name,
+  email:user.email,
+  avatar:user.avatar
+}
     res.status(200).json({
       message: 'Google Sign-In successful',
       data: {
-        user,
+        user:userresponse,
         token: jwtToken,
       },
     });

@@ -9,6 +9,7 @@ import urlRoutes from "./routes/url.routes";
 import analyticsRoutesfrom from "./routes/analytics.routes";
 import compression from "compression";
 import  {redisClient}  from "./config/redisClient";
+import { swaggerUi, swaggerSpecs } from './config/swagger';
 dotenv.config();
 main();
 redisClient();
@@ -33,7 +34,7 @@ app.use((err: any, req: Request, res: Response, next: any) => {
   }
   next();
 });
-
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors());

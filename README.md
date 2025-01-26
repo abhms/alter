@@ -1,7 +1,12 @@
 # Alter Office - Sort URL  
 
-This project is a powerful URL shortener and analytics tool, built using **Node.js**, **TypeScript**, **MongoDB**, and **Redis**. It supports advanced analytics like tracking clicks, user agents, and geographic locations.  
+This project is a powerful URL shortener and analytics tool, built using **Node.js**, **TypeScript**, **MongoDB**,**swagger** and **Redis**. It supports advanced analytics like tracking clicks, user agents, and geographic locations.  
 
+
+## Swagger Documention link
+```
+/api-docs
+```
 ---
 
 ## Features  
@@ -51,6 +56,6 @@ npm run dev
 ## Build locally
 
 ```
-npm run Build
+npm run build
 npm start
 ```
