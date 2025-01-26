@@ -59,3 +59,8 @@ npm run dev
 npm run build
 npm start
 ```
+## Test case
+
+```
+npm test
+```
