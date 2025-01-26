@@ -5,6 +5,9 @@ import { redisClient } from "../config/redisClient";
 import Url from "../modal/Url";
 import RedirectAnalytics from "../modal/RedirectAnalytics";
 
+// Mocking Redis Client
+import { RedisClientType } from "@redis/client"; // Adjust to correct import if needed
+
 jest.mock("../config/redisClient", () => ({
   redisClient: {
     get: jest.fn(),
@@ -12,8 +15,16 @@ jest.mock("../config/redisClient", () => ({
   },
 }));
 
-jest.mock("../modal/Url");
-jest.mock("../modal/RedirectAnalytics");
+// Mocking the models
+jest.mock("../modal/Url", () => ({
+  findOne: jest.fn(),
+  find: jest.fn(),
+}));
+
+jest.mock("../modal/RedirectAnalytics", () => ({
+  aggregate: jest.fn(),
+  find: jest.fn(),
+}));
 
 describe("Analytics Controller", () => {
   describe("GET /analytics/:alias", () => {
@@ -23,6 +34,8 @@ describe("Analytics Controller", () => {
         totalClicks: 100,
         uniqueUsers: 50,
       });
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(cachedAnalytics);
 
       const response = await request(app)
@@ -36,7 +49,11 @@ describe("Analytics Controller", () => {
 
     it("should return 404 if URL not found in database", async () => {
       const alias = "short-url-123";
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(null);
+      //@ts-ignore
+
       Url.findOne.mockResolvedValueOnce(null);
 
       const response = await request(app)
@@ -49,8 +66,12 @@ describe("Analytics Controller", () => {
 
     it("should return analytics and cache the result if not cached", async () => {
       const alias = "short-url-123";
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(null);
       const url = { shortUrl: `http://localhost/${alias}` };
+      //@ts-ignore
+
       Url.findOne.mockResolvedValueOnce(url);
 
       const analyticsData = {
@@ -60,8 +81,9 @@ describe("Analytics Controller", () => {
         osType: [],
         deviceType: [],
       };
-      const aggregateMock = jest.fn().mockResolvedValueOnce(analyticsData);
-      RedirectAnalytics.aggregate.mockImplementation(aggregateMock);
+      //@ts-ignore
+
+      RedirectAnalytics.aggregate.mockResolvedValueOnce(analyticsData);
 
       const response = await request(app)
         .get(`/analytics/${alias}`)
@@ -70,6 +92,8 @@ describe("Analytics Controller", () => {
       expect(response.status).toBe(200);
       expect(response.body.totalClicks).toBe(200);
       expect(response.body.uniqueUsers).toBe(100);
+      //@ts-ignore
+
       expect(redisClient.set).toHaveBeenCalledWith(
         `analytics:${alias}`,
         JSON.stringify(analyticsData),
@@ -80,8 +104,7 @@ describe("Analytics Controller", () => {
     it("should return 401 if Authorization token is missing", async () => {
       const alias = "short-url-123";
 
-      const response = await request(app)
-        .get(`/analytics/${alias}`);
+      const response = await request(app).get(`/analytics/${alias}`);
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("Authorization token is required");
@@ -106,6 +129,8 @@ describe("Analytics Controller", () => {
         totalClicks: 1000,
         uniqueUsers: 500,
       });
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(cachedAnalytics);
 
       const response = await request(app)
@@ -119,7 +144,11 @@ describe("Analytics Controller", () => {
 
     it("should return 404 if no URLs found for topic", async () => {
       const topic = "technology";
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(null);
+      //@ts-ignore
+
       Url.find.mockResolvedValueOnce([]);
 
       const response = await request(app)
@@ -132,8 +161,11 @@ describe("Analytics Controller", () => {
 
     it("should return topic analytics and cache the result if not cached", async () => {
       const topic = "technology";
+      //@ts-ignore
       redisClient.get.mockResolvedValueOnce(null);
       const urls = [{ shortUrl: "short-url-123" }];
+      //@ts-ignore
+
       Url.find.mockResolvedValueOnce(urls);
 
       const analyticsData = {
@@ -143,8 +175,9 @@ describe("Analytics Controller", () => {
         osType: [],
         deviceType: [],
       };
-      const aggregateMock = jest.fn().mockResolvedValueOnce(analyticsData);
-      RedirectAnalytics.aggregate.mockImplementation(aggregateMock);
+      //@ts-ignore
+
+      RedirectAnalytics.aggregate.mockResolvedValueOnce(analyticsData);
 
       const response = await request(app)
         .get(`/analytics/topic/${topic}`)
@@ -153,6 +186,8 @@ describe("Analytics Controller", () => {
       expect(response.status).toBe(200);
       expect(response.body.totalClicks).toBe(500);
       expect(response.body.uniqueUsers).toBe(200);
+      //@ts-ignore
+
       expect(redisClient.set).toHaveBeenCalledWith(
         `topicAnalytics:${topic}`,
         JSON.stringify(analyticsData),
@@ -163,8 +198,7 @@ describe("Analytics Controller", () => {
     it("should return 401 if Authorization token is missing", async () => {
       const topic = "technology";
 
-      const response = await request(app)
-        .get(`/analytics/topic/${topic}`);
+      const response = await request(app).get(`/analytics/topic/${topic}`);
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("Authorization token is required");
@@ -178,6 +212,8 @@ describe("Analytics Controller", () => {
         totalClicks: 1000,
         uniqueUsers: 500,
       });
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(cachedAnalytics);
 
       const response = await request(app)
@@ -191,7 +227,11 @@ describe("Analytics Controller", () => {
 
     it("should return 404 if no URLs found for the user", async () => {
       const userId = "user123";
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(null);
+      //@ts-ignore
+
       Url.find.mockResolvedValueOnce([]);
 
       const response = await request(app)
@@ -204,8 +244,12 @@ describe("Analytics Controller", () => {
 
     it("should return overall analytics and cache the result if not cached", async () => {
       const userId = "user123";
+      //@ts-ignore
+
       redisClient.get.mockResolvedValueOnce(null);
       const userUrls = [{ shortUrl: "short-url-123" }];
+      //@ts-ignore
+
       Url.find.mockResolvedValueOnce(userUrls);
 
       const analyticsData = {
@@ -216,8 +260,9 @@ describe("Analytics Controller", () => {
         osType: [],
         deviceType: [],
       };
-      const findMock = jest.fn().mockResolvedValueOnce(analyticsData);
-      RedirectAnalytics.find.mockImplementation(findMock);
+      //@ts-ignore
+
+      RedirectAnalytics.find.mockResolvedValueOnce(analyticsData);
 
       const response = await request(app)
         .get("/analytics/overall")
@@ -226,6 +271,8 @@ describe("Analytics Controller", () => {
       expect(response.status).toBe(200);
       expect(response.body.totalClicks).toBe(300);
       expect(response.body.uniqueUsers).toBe(150);
+      //@ts-ignore
+
       expect(redisClient.set).toHaveBeenCalledWith(
         `overallAnalytics:${userId}`,
         JSON.stringify(analyticsData),
@@ -234,8 +281,7 @@ describe("Analytics Controller", () => {
     });
 
     it("should return 401 if Authorization token is missing", async () => {
-      const response = await request(app)
-        .get("/analytics/overall");
+      const response = await request(app).get("/analytics/overall");
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe("Authorization token is required");
