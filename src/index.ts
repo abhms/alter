@@ -46,7 +46,7 @@ app.use("/api/analytics", analyticsRoutesfrom);
 app.get("/", async (req: Request, res: Response) => {
   res.send("alter Backend.");
 });
-
+export default app;
 server.listen(port, () => {
   console.log(`server is running at http://localhost:${port}`);
 });

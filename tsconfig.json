@@ -12,6 +12,6 @@
     "types": ["node", "express"],
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "setupTests.ts"],
   "exclude": ["node_modules"]
 }
