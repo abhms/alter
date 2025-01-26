@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-
+import { Request, Response, NextFunction } from "express";
 import Url from "../modal/Url";
 import RedirectAnalytics from "../modal/RedirectAnalytics";
-export const getAnalytics = async (req:Request, res:Response) => {
+import { redisClient } from "../config/redisClient";
+export const getAnalytics = async (req: Request, res: Response) => {
   const { alias } = req.params;
 
   try {
@@ -10,6 +10,13 @@ export const getAnalytics = async (req:Request, res:Response) => {
     const protocol = req.protocol;
     const host = req.get("host");
     const shortUrl = `${protocol}://${host}/${alias}`;
+    const client = await redisClient();
+    const cachedAnalytics = await client.get(`analytics:${alias}`);
+    if (cachedAnalytics) {
+      console.log("Cache hit for analytics:", alias);
+      return res.status(200).json(JSON.parse(cachedAnalytics));
+    }
+    console.log("Cache miss for analytics:", alias);
 
     const url = await Url.findOne({ shortUrl });
     if (!url) {
@@ -75,30 +82,35 @@ export const getAnalytics = async (req:Request, res:Response) => {
       },
     ]);
 
-    const totalClicks = await RedirectAnalytics.countDocuments({
-      shortUrl,
-    });
-    const uniqueUsers = await RedirectAnalytics.distinct("userId", {
-      shortUrl,
-    });
+    const totalClicks = await RedirectAnalytics.countDocuments({ shortUrl });
+    const uniqueUsers = await RedirectAnalytics.distinct("userId", { shortUrl });
 
-    res.status(200).json({
+    const responseData = {
       totalClicks,
       uniqueUsers: uniqueUsers.length,
       clicksByDate: analytics,
       osType: osAnalytics,
       deviceType: deviceAnalytics,
-    });
+    };
+    await client.set(`analytics:${alias}`, JSON.stringify(responseData), { EX: 300 });
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("Error fetching analytics:", error);
     res.status(500).json({ message: "Failed to fetch analytics" });
   }
 };
 
-export const getTopicAnalytics = async (req:Request, res:Response) => {
+export const getTopicAnalytics = async (req: Request, res: Response) => {
   const { topic } = req.params;
 
   try {
+    const client = await redisClient();
+    const cachedAnalytics = await client.get(`topicAnalytics:${topic}`);
+    if (cachedAnalytics) {
+      console.log("Cache hit for topic analytics:", topic);
+      return res.status(200).json(JSON.parse(cachedAnalytics));
+    }
+    console.log("Cache miss for topic analytics:", topic);
     const urls = await Url.find({ topic });
     if (!urls || urls.length === 0) {
       return res.status(404).json({ message: "No URLs found for this topic" });
@@ -151,21 +163,30 @@ export const getTopicAnalytics = async (req:Request, res:Response) => {
       })
     );
 
-    res.status(200).json({
+    const responseData = {
       totalClicks,
       uniqueUsers: uniqueUsers.length,
       clicksByDate: analyticsByDate,
       urls: urlAnalytics,
-    });
+    };
+    await client.set(`topicAnalytics:${topic}`, JSON.stringify(responseData), { EX: 300 });
+    res.status(200).json(responseData);
   } catch (error) {
     console.error("Error fetching topic analytics:", error);
     res.status(500).json({ message: "Failed to fetch analytics" });
   }
 };
 
-export const getOverallAnalytics = async (req:Request, res:Response) => {
+export const getOverallAnalytics = async (req: Request, res: Response) => {
   try {
-    const { id :userId} = req.user as { id: string };
+    const { id: userId } = req.user as { id: string };
+    const client = await redisClient();
+    const cachedAnalytics = await client.get(`overallAnalytics:${userId}`);
+    if (cachedAnalytics) {
+      console.log("Cache hit for overall analytics:", userId);
+      return res.status(200).json(JSON.parse(cachedAnalytics));
+    }
+    console.log("Cache miss for overall analytics:", userId);
 
     const userUrls = await Url.find({ createdBy: userId });
     if (!userUrls.length) {
@@ -173,7 +194,6 @@ export const getOverallAnalytics = async (req:Request, res:Response) => {
     }
 
     const shortUrls = userUrls.map((url) => url.shortUrl);
-
     const totalUrls = userUrls.length;
 
     const analytics = await RedirectAnalytics.find({
@@ -181,7 +201,6 @@ export const getOverallAnalytics = async (req:Request, res:Response) => {
     });
 
     const totalClicks = analytics.length;
-
     const uniqueUsers = new Set(analytics.map((a) => a.userId.toString())).size;
 
     const clicksByDate = analytics.reduce((acc, curr) => {
@@ -228,14 +247,16 @@ export const getOverallAnalytics = async (req:Request, res:Response) => {
       uniqueUsers: device.uniqueUsers.size,
     }));
 
-    return res.status(200).json({
+    const responseData = {
       totalUrls,
       totalClicks,
       uniqueUsers,
       clicksByDate: clicksByDateArray,
       osType: osTypeArray,
       deviceType: deviceTypeArray,
-    });
+    };
+    await client.set(`overallAnalytics:${userId}`, JSON.stringify(responseData), { EX: 300 });
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error("Error fetching overall analytics:", error);
     return res.status(500).json({ message: "Failed to fetch analytics" });

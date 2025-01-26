@@ -8,9 +8,10 @@ import authRouter from "./routes/auth.route";
 import urlRoutes from "./routes/url.routes";
 import analyticsRoutesfrom from "./routes/analytics.routes";
 import compression from "compression";
+import  {redisClient}  from "./config/redisClient";
 dotenv.config();
 main();
-
+redisClient();
 const app = express();
 const port = process.env.PORT || 4000;
 
